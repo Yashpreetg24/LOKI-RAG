@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RAG Document Q&A Terminal — ask questions about your study documents" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>RAG Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="terminal.css" />
+</head>
+<body>
+  <!-- Onboarding screen (hidden after 7s or skip) -->
+  <div id="onboarding-overlay">
+    <div id="onboarding-content">
+      <div id="onboarding-status">ACCESSING LOKI_PROTOCOL...</div>
+      <div id="onboarding-logo" class="glitch-aura">LOKI</div>
+      <div id="onboarding-subtitle">Your Personal RAG Terminal</div>
+      
+      <div id="onboarding-features">
+        <div class="feature-item">SCANNING VECTOR_STORE...</div>
+        <div class="feature-item">SYSTEM_STABLE...</div>
+        <div class="feature-item">READY_FOR_QUERY...</div>
+      </div>
+    </div>
+    <button id="skip-onboarding" aria-label="Skip onboarding">SKIP_INTRO</button>
+  </div>
+
+
+  <!-- Full-screen drag-and-drop overlay (hidden until drag) -->
+  <div id="drop-zone">
+    <div id="drop-zone-inner">
+      <div id="drop-icon">⬇</div>
+      <div>Drop files to upload</div>
+      <div class="drop-hint">PDF · TXT · MD</div>
+    </div>
+  </div>
+
+  <!-- ASCII art header -->
+  <div id="header"></div>
+
+  <!-- Scrollable output area -->
+  <div id="output" role="log" aria-live="polite" aria-label="Terminal output"></div>
+
+  <!-- Keyboard shortcuts hint bar -->
+  <div id="shortcuts-bar">
+    <span class="shortcut"><span class="key">↑↓</span> history</span>
+    <span class="shortcut"><span class="key">Tab</span> complete</span>
+    <span class="shortcut"><span class="key">Drag&Drop</span> upload</span>
+    <span class="shortcut"><span class="key">/help</span> commands</span>
+  </div>
+
+  <!-- Command input bar -->
+  <div id="input-bar">
+    <!-- Autocomplete dropdown — shown when user types a / command -->
+    <div id="autocomplete-dropdown" role="listbox" aria-label="Command suggestions"></div>
+    <div id="input-actions">
+      <button id="voice-btn" class="action-btn" aria-label="Voice input" title="Voice input (STT)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <button id="upload-btn" class="action-btn" aria-label="Upload file" title="Upload file (PDF/TXT/MD)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </button>
+    </div>
+    <span class="prompt" aria-hidden="true">&gt;&nbsp;</span>
+    <div id="input-wrap">
+      <span id="input-mirror" aria-hidden="true"></span>
+      <input
+        type="text"
+        id="cmd-input"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        autofocus
+        aria-label="Terminal input"
+        placeholder=""
+      />
+      <span id="cursor" class="blink" aria-hidden="true">█</span>
+    </div>
+  </div>
+
+  <!-- Hidden file input for /upload command -->
+  <input type="file" id="file-input" multiple accept=".pdf,.txt,.md" style="display:none" aria-hidden="true" />
+
+  <!-- Status bar -->
+  <div id="status-bar" aria-label="System status">
+    <span id="ollama-status">[OLLAMA: <span class="status-dot">●</span>CONNECTING]</span>
+    <span id="model-info">MODEL: — | DOCS: —</span>
+    <span class="interactive-toggle" id="mic-toggle" title="Toggle Voice Commands (or use /voice)">[MIC: OFF]</span>
+    <span class="interactive-toggle" id="tts-toggle" title="Toggle Voice Feedback (or use /tts)">[TTS: OFF]</span>
+    <span id="clock">00:00:00</span>
+  </div>
+
+  <script src="voice.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
