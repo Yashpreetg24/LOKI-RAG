@@ -98,18 +98,18 @@ body::before {
 #header {
   flex-shrink: 0;
   border-bottom: 1px solid var(--bg-border);
-  padding: 10px 16px 8px;
+  padding: 10px 16px 2px;
   background: var(--bg);
 }
 
 .ascii-header {
   color: var(--green);
   text-shadow: var(--glow-strong);
-  font-family: var(--font-term);
-  font-size: 16px;
-  line-height: 1.1;
+  font-family: var(--font-mono); /* Use JetBrains Mono for perfect alignment */
+  font-size: 13.5px;
+  line-height: 1.0; /* Close vertical gaps */
   white-space: pre;
-  letter-spacing: 0.05em;
+  letter-spacing: normal;
   /* Subtle flicker */
   animation: flicker 10s infinite;
 }
@@ -127,7 +127,7 @@ body::before {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 18px 8px;
+  padding: 2px 18px 8px;
   scroll-behavior: smooth;
 }
 
