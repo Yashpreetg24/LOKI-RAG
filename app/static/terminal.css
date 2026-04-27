@@ -10,8 +10,8 @@
   --bg-raise:    oklch(0.18 0.02 160);
   --bg-border:   oklch(0.32 0.06 150);
   
-  --phosphor:    oklch(0.92 0.18 145);
-  --phosphor-dim:oklch(0.88 0.22 145 / 0.7);
+  --phosphor:    oklch(0.88 0.28 140); /* More vibrant neon green */
+  --phosphor-dim:oklch(0.88 0.28 140 / 0.7);
   --green:       var(--phosphor);
   
   --amber:       oklch(0.85 0.18 70);
@@ -30,7 +30,7 @@
   --line-height: 1.5;
 
   /* ── Effects ── */
-  --glow-color:  oklch(0.92 0.18 145 / 0.4);
+  --glow-color:  oklch(0.88 0.28 140 / 0.45);
   --glow:        0 0 10px var(--glow-color);
   --glow-strong: 0 0 20px var(--glow-color), 0 0 5px var(--glow-color);
 }

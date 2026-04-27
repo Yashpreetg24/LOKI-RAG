@@ -7,41 +7,41 @@
 
 // ── API endpoints ─────────────────────────────────────────────
 const API = {
-  UPLOAD:        '/api/upload',
-  QUERY:         '/api/query',
-  SUMMARIZE:     '/api/summarize',
-  DOCUMENTS:     '/api/documents',
-  DOCUMENT:      (id) => `/api/documents/${id}`,
-  HEALTH:        '/api/health',
+  UPLOAD: '/api/upload',
+  QUERY: '/api/query',
+  SUMMARIZE: '/api/summarize',
+  DOCUMENTS: '/api/documents',
+  DOCUMENT: (id) => `/api/documents/${id}`,
+  HEALTH: '/api/health',
   CONVERSATIONS: '/api/conversations',
-  HISTORY:       (id) => `/api/history/${id}`,
-  SOURCES:       (id) => `/api/sources/${id}`,
+  HISTORY: (id) => `/api/history/${id}`,
+  SOURCES: (id) => `/api/sources/${id}`,
 };
 
 // ── State ─────────────────────────────────────────────────────
 const state = {
   conversationId: crypto.randomUUID(),
-  documents:      [],     // [{id, filename, chunks, upload_date}]
-  streaming:      false,
-  cmdHistory:     [],     // past commands, newest first
-  historyIdx:     -1,     // -1 = not navigating
+  documents: [],     // [{id, filename, chunks, upload_date}]
+  streaming: false,
+  cmdHistory: [],     // past commands, newest first
+  historyIdx: -1,     // -1 = not navigating
 };
 
 // ── DOM references ────────────────────────────────────────────
-const output      = document.getElementById('output');
-const cmdInput    = document.getElementById('cmd-input');
+const output = document.getElementById('output');
+const cmdInput = document.getElementById('cmd-input');
 const inputMirror = document.getElementById('input-mirror');
-const cursorEl    = document.getElementById('cursor');
-const fileInput   = document.getElementById('file-input');
-const dropZone    = document.getElementById('drop-zone');
+const cursorEl = document.getElementById('cursor');
+const fileInput = document.getElementById('file-input');
+const dropZone = document.getElementById('drop-zone');
 const ollamaBadge = document.getElementById('ollama-status');
-const modelBadge  = document.getElementById('model-info');
-const clockEl     = document.getElementById('clock');
+const modelBadge = document.getElementById('model-info');
+const clockEl = document.getElementById('clock');
 const autocompleteEl = document.getElementById('autocomplete-dropdown');
-const micToggle   = document.getElementById('mic-toggle');
-const ttsToggle   = document.getElementById('tts-toggle');
-const voiceBtn    = document.getElementById('voice-btn');
-const uploadBtn   = document.getElementById('upload-btn');
+const micToggle = document.getElementById('mic-toggle');
+const ttsToggle = document.getElementById('tts-toggle');
+const voiceBtn = document.getElementById('voice-btn');
+const uploadBtn = document.getElementById('upload-btn');
 
 // ── Utilities ─────────────────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -56,14 +56,14 @@ function padEnd(str, n) {
 
 // ── Autocomplete ─────────────────────────────────────────────
 const COMMANDS = [
-  { cmd: '/upload',    desc: 'Upload a document (PDF, TXT, MD)' },
-  { cmd: '/docs',      desc: 'List uploaded documents' },
-  { cmd: '/ls',        desc: 'List uploaded documents' },
+  { cmd: '/upload', desc: 'Upload a document (PDF, TXT, MD)' },
+  { cmd: '/docs', desc: 'List uploaded documents' },
+  { cmd: '/ls', desc: 'List uploaded documents' },
   { cmd: '/summarize', desc: 'Summarise a document' },
-  { cmd: '/delete',    desc: 'Delete a document and its embeddings' },
-  { cmd: '/status',    desc: 'Check LLM connection & stats' },
-  { cmd: '/clear',     desc: 'Clear terminal output' },
-  { cmd: '/help',      desc: 'Show all commands' },
+  { cmd: '/delete', desc: 'Delete a document and its embeddings' },
+  { cmd: '/status', desc: 'Check LLM connection & stats' },
+  { cmd: '/clear', desc: 'Clear terminal output' },
+  { cmd: '/help', desc: 'Show all commands' },
 ];
 
 let _acItems = [];   // filtered commands currently shown
@@ -71,13 +71,13 @@ let _acIndex = -1;   // active highlighted index (-1 = none)
 
 // ── Tab Completion State ─────────────────────────────────────
 let _tabMatches = [];
-let _tabIndex   = -1;
+let _tabIndex = -1;
 let _lastTabBase = ""; // original input before completion started
 
 function showAutocomplete(partial) {
   const q = partial.toLowerCase();
   _acItems = COMMANDS.filter((c) => c.cmd.startsWith(q));
-  _acIndex  = -1;
+  _acIndex = -1;
 
   if (_acItems.length === 0) { hideAutocomplete(); return; }
 
@@ -89,16 +89,16 @@ function showAutocomplete(partial) {
 
     // Highlight matched prefix in green, rest in cyan
     const matchedPart = item.cmd.slice(0, q.length);
-    const remainPart  = item.cmd.slice(q.length);
-    const cmdSpan     = document.createElement('span');
+    const remainPart = item.cmd.slice(q.length);
+    const cmdSpan = document.createElement('span');
     cmdSpan.className = 'ac-cmd';
-    const matchEl     = document.createElement('span');
+    const matchEl = document.createElement('span');
     matchEl.className = 'ac-match';
     matchEl.textContent = matchedPart;
     cmdSpan.appendChild(matchEl);
     cmdSpan.appendChild(document.createTextNode(remainPart));
 
-    const descSpan     = document.createElement('span');
+    const descSpan = document.createElement('span');
     descSpan.className = 'ac-desc';
     descSpan.textContent = item.desc;
 
@@ -114,7 +114,7 @@ function showAutocomplete(partial) {
 function hideAutocomplete() {
   autocompleteEl.classList.remove('visible');
   _acItems = [];
-  _acIndex  = -1;
+  _acIndex = -1;
 }
 
 function _setAcActive(idx) {
@@ -177,9 +177,9 @@ function printCmd(cmd) {
   block.textContent = '> ' + cmd;
 }
 
-function printError(msg)   { print('✗  ' + msg, 'error');   }
+function printError(msg) { print('✗  ' + msg, 'error'); }
 function printSuccess(msg) { print('✓  ' + msg, 'success'); }
-function printInfo(msg)    { print(msg, 'info');             }
+function printInfo(msg) { print(msg, 'info'); }
 
 function printSources(sources) {
   if (!sources || sources.length === 0) return;
@@ -252,9 +252,9 @@ async function streamSSE(url, body, onToken, onDone, onContextNote) {
 
   try {
     const resp = await fetch(url, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body),
+      body: JSON.stringify(body),
     });
 
     if (!resp.ok) {
@@ -263,7 +263,7 @@ async function streamSSE(url, body, onToken, onDone, onContextNote) {
       return;
     }
 
-    const reader  = resp.body.getReader();
+    const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
     let gotDone = false;
@@ -331,7 +331,7 @@ async function handleQuery(question) {
   streamCursor.textContent = '█';
 
   let firstToken = true;
-  let sources    = [];
+  let sources = [];
 
   await streamSSE(
     API.QUERY,
@@ -379,7 +379,7 @@ async function handleSummarize(args) {
   }
 
   await refreshDocs(false);
-  
+
   // Smarter matching: exact -> case-insensitive -> partial
   let doc = state.documents.find((d) => d.filename === filename);
   if (!doc) {
@@ -464,8 +464,8 @@ async function uploadFiles(files) {
 }
 
 async function uploadSingleFile(file) {
-  const block  = createBlock('upload-block');
-  const label  = document.createElement('div');
+  const block = createBlock('upload-block');
+  const label = document.createElement('div');
   label.textContent = `↑  Uploading ${file.name}…`;
   block.appendChild(label);
 
@@ -526,7 +526,7 @@ async function uploadSingleFile(file) {
 
 function renderBar(el, pct) {
   const filled = Math.round(pct / 5);         // 0–20 blocks
-  const empty  = 20 - filled;
+  const empty = 20 - filled;
   el.textContent = '[' + '█'.repeat(filled) + '░'.repeat(empty) + '] ' + Math.floor(pct) + '%';
 }
 
@@ -552,9 +552,9 @@ function renderDocsTable(docs) {
   }
 
   // Column widths (content only, borders/padding added separately)
-  const C_ID   = 10;
+  const C_ID = 10;
   const C_NAME = Math.min(30, Math.max(12, Math.max(...docs.map((d) => d.filename.length))));
-  const C_CHK  = 6;
+  const C_CHK = 6;
   const C_DATE = 8;
 
   // Inner row width = C_ID + 3 + C_NAME + 3 + C_CHK + 3 + C_DATE + 2
@@ -562,25 +562,25 @@ function renderDocsTable(docs) {
   const innerW = C_ID + 3 + C_NAME + 3 + C_CHK + 3 + C_DATE;
 
   const h = (a, b, c, d) =>
-    `├${'─'.repeat(a+2)}┼${'─'.repeat(b+2)}┼${'─'.repeat(c+2)}┼${'─'.repeat(d+2)}┤`;
+    `├${'─'.repeat(a + 2)}┼${'─'.repeat(b + 2)}┼${'─'.repeat(c + 2)}┼${'─'.repeat(d + 2)}┤`;
   const row = (a, b, c, d) =>
     `│ ${a} │ ${b} │ ${c} │ ${d} │`;
 
-  const top    = `┌${'─'.repeat(C_ID+2)}┬${'─'.repeat(C_NAME+2)}┬${'─'.repeat(C_CHK+2)}┬${'─'.repeat(C_DATE+2)}┐`;
+  const top = `┌${'─'.repeat(C_ID + 2)}┬${'─'.repeat(C_NAME + 2)}┬${'─'.repeat(C_CHK + 2)}┬${'─'.repeat(C_DATE + 2)}┐`;
   const banner = `│ UPLOADED DOCUMENTS${' '.repeat(innerW - 17)}│`;
-  const divH   = h(C_ID, C_NAME, C_CHK, C_DATE);
+  const divH = h(C_ID, C_NAME, C_CHK, C_DATE);
   const header = row(
-    padEnd('ID',       C_ID),
+    padEnd('ID', C_ID),
     padEnd('Filename', C_NAME),
-    padEnd('Chunks',   C_CHK),
-    padEnd('Date',     C_DATE)
+    padEnd('Chunks', C_CHK),
+    padEnd('Date', C_DATE)
   );
-  const bot = `└${'─'.repeat(C_ID+2)}┴${'─'.repeat(C_NAME+2)}┴${'─'.repeat(C_CHK+2)}┴${'─'.repeat(C_DATE+2)}┘`;
+  const bot = `└${'─'.repeat(C_ID + 2)}┴${'─'.repeat(C_NAME + 2)}┴${'─'.repeat(C_CHK + 2)}┴${'─'.repeat(C_DATE + 2)}┘`;
 
   const dataRows = docs.map((d) =>
     row(
-      padEnd(d.id.slice(0, C_ID),  C_ID),
-      padEnd(d.filename,            C_NAME),
+      padEnd(d.id.slice(0, C_ID), C_ID),
+      padEnd(d.filename, C_NAME),
       String(d.chunks).padStart(C_CHK),
       padEnd((d.upload_date || '').slice(5), C_DATE)   // MM-DD
     )
@@ -634,9 +634,9 @@ async function handleStatus() {
     const ok = data.backend !== 'none';
     const lines = [
       `${ok ? '●' : '○'}  LLM Backend: ${(data.backend || 'none').toUpperCase()}`,
-      `   Ollama : ${data.ollama  ? '✓ online'  : '✗ offline'}`,
-      `   Groq   : ${data.groq    ? '✓ online'  : (data.groq === false ? '✗ offline / no key' : '—')}`,
-      `   Model  : ${data.model  || '—'}`,
+      `   Ollama : ${data.ollama ? '✓ online' : '✗ offline'}`,
+      `   Groq   : ${data.groq ? '✓ online' : (data.groq === false ? '✗ offline / no key' : '—')}`,
+      `   Model  : ${data.model || '—'}`,
       `   Docs   : ${data.documents}`,
     ].join('\n');
     print(lines, ok ? 'success' : 'error');
@@ -794,7 +794,7 @@ function handleVoiceToggle() {
       micToggle.classList.remove('active');
     }
   );
-  
+
   if (isNowListening) {
     micToggle.textContent = '[MIC: ON\u25CF]';
     micToggle.classList.add('active');
@@ -832,23 +832,23 @@ function clearOutput() {
 async function dispatch(input) {
   printCmd(input);
 
-  const trimmed   = input.trimStart();
+  const trimmed = input.trimStart();
   const firstWord = trimmed.split(/\s+/)[0].toLowerCase();
-  const rest      = trimmed.slice(firstWord.length).trimStart();
+  const rest = trimmed.slice(firstWord.length).trimStart();
 
   switch (firstWord) {
-    case '/help':      showHelp();                  break;
+    case '/help': showHelp(); break;
     case '/docs':
-    case '/ls':        await refreshDocs(true);     break;
-    case '/upload':    handleUpload();              break;
-    case '/clear':     clearOutput();               break;
-    case '/status':    await handleStatus();        break;
-    case '/sources':   await handleSourcesCmd();    break;
-    case '/history':   await handleHistoryCmd();    break;
-    case '/voice':     handleVoiceToggle();         break;
-    case '/tts':       handleTtsToggle();           break;
+    case '/ls': await refreshDocs(true); break;
+    case '/upload': handleUpload(); break;
+    case '/clear': clearOutput(); break;
+    case '/status': await handleStatus(); break;
+    case '/sources': await handleSourcesCmd(); break;
+    case '/history': await handleHistoryCmd(); break;
+    case '/voice': handleVoiceToggle(); break;
+    case '/tts': handleTtsToggle(); break;
     case '/summarize': await handleSummarize(rest); break;
-    case '/delete':    await handleDelete(rest);    break;
+    case '/delete': await handleDelete(rest); break;
     default:
       if (firstWord.startsWith('/')) {
         printError(`Unknown command: '${firstWord}'`);
@@ -873,7 +873,7 @@ function handleKeydown(e) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (_acIndex > 0) _setAcActive(_acIndex - 1);
-      else              hideAutocomplete();
+      else hideAutocomplete();
       return;
     }
     if (e.key === 'Escape') {
@@ -912,7 +912,7 @@ function handleKeydown(e) {
     // B. Filename completion for specific commands
     const parts = val.split(/\s+/);
     if (parts.length >= 1 && ['/summarize', '/delete'].includes(parts[0])) {
-      const cmd   = parts[0];
+      const cmd = parts[0];
       const query = parts.slice(1).join(' ');
 
       // If we are already cycling, just move to next
@@ -925,7 +925,7 @@ function handleKeydown(e) {
 
       // Start new cycling
       _lastTabBase = query;
-      _tabMatches  = state.documents
+      _tabMatches = state.documents
         .map(d => d.filename)
         .filter(name => name.toLowerCase().startsWith(query.toLowerCase()));
 
@@ -985,10 +985,10 @@ function handleInputChange() {
 
   // Reset tab completion state on any manual type
   _tabMatches = [];
-  _tabIndex   = -1;
+  _tabIndex = -1;
 
   // Show autocomplete when typing a /command (first word only)
-  const val     = cmdInput.value;
+  const val = cmdInput.value;
   const cmdWord = val.split(' ')[0];
   if (cmdWord.startsWith('/') && val === cmdWord) {
     showAutocomplete(cmdWord);
@@ -1049,7 +1049,7 @@ function _setBadge(data) {
   dot.textContent = '●';
 
   const backend = data?.backend || 'none';
-  const online  = backend !== 'none';
+  const online = backend !== 'none';
 
   let label;
   if (backend === 'ollama') label = 'OLLAMA';
@@ -1079,7 +1079,7 @@ async function updateStatusBar(data) {
 }
 
 function pollStatus() {
-  updateStatusBar(null).catch(() => {});
+  updateStatusBar(null).catch(() => { });
 }
 
 // ── Clock ─────────────────────────────────────────────────────
@@ -1130,18 +1130,18 @@ function refocusInput() {
 async function startOnboarding() {
   const overlay = document.getElementById('onboarding-overlay');
   const skipBtn = document.getElementById('skip-onboarding');
-  
+
   let onboardingDone = false;
 
   const finish = () => {
     if (onboardingDone) return;
     onboardingDone = true;
     overlay.classList.add('hidden');
-    
+
     // Resume app initialization
     printWelcome();
     cmdInput.focus();
-    
+
     // Remove from DOM after transition
     setTimeout(() => overlay.remove(), 800);
   };
@@ -1159,7 +1159,7 @@ function setupMobileViewport() {
   const handleResize = () => {
     const vh = window.visualViewport.height;
     document.body.style.height = `${vh}px`;
-    
+
     // Scroll the active input into view if the keyboard is up
     if (vh < window.innerHeight) {
       window.scrollTo(0, 0);
@@ -1175,18 +1175,18 @@ function setupMobileViewport() {
 function init() {
   renderHeader();
   setupMobileViewport();
-  
+
   // Delay welcome and focus for onboarding
   startOnboarding();
 
   // Input events
   cmdInput.addEventListener('keydown', handleKeydown);
-  cmdInput.addEventListener('input',   handleInputChange);
+  cmdInput.addEventListener('input', handleInputChange);
   // keyup catches arrow keys, Home/End; click handles mouse repositioning
-  cmdInput.addEventListener('keyup',   syncCursor);
-  cmdInput.addEventListener('click',   syncCursor);
+  cmdInput.addEventListener('keyup', syncCursor);
+  cmdInput.addEventListener('click', syncCursor);
   // Hide autocomplete when input loses focus (click elsewhere)
-  cmdInput.addEventListener('blur',    () => setTimeout(hideAutocomplete, 120));
+  cmdInput.addEventListener('blur', () => setTimeout(hideAutocomplete, 120));
 
   // Clicking anywhere in the terminal re-focuses input
   output.addEventListener('click', refocusInput);
