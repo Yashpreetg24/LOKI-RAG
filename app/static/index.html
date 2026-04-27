@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="RAG Document Q&A Terminal — ask questions about your study documents" />
   <meta name="theme-color" content="#0a0a0a" />
-  <title>RAG Terminal</title>
+  <title>LOKI Terminal | Yashpreet Gupta</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&family=VT323&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="terminal.css" />
 </head>
 <body>
   <!-- Onboarding screen (hidden after 7s or skip) -->
   <div id="onboarding-overlay">
     <div id="onboarding-content">
-      <div id="onboarding-status">ACCESSING LOKI_PROTOCOL...</div>
-      <div id="onboarding-logo" class="glitch-aura">LOKI</div>
-      <div id="onboarding-subtitle">Your Personal RAG Terminal</div>
+      <div id="onboarding-status">INITIALIZING LOKI_OS...</div>
+      <div id="onboarding-logo" class="glitch-loki">LOKI</div>
+      <div id="onboarding-subtitle">RAG ENGINE BY YASHPREET GUPTA</div>
       
       <div id="onboarding-features">
         <div class="feature-item">SCANNING VECTOR_STORE...</div>
@@ -94,10 +94,9 @@
 
   <!-- Status bar -->
   <div id="status-bar" aria-label="System status">
-    <span id="ollama-status">[OLLAMA: <span class="status-dot">●</span>CONNECTING]</span>
+    <span id="ollama-status">[LLM: <span class="status-dot">●</span>CONNECTING]</span>
     <span id="model-info">MODEL: — | DOCS: —</span>
-    <span class="interactive-toggle" id="mic-toggle" title="Toggle Voice Commands (or use /voice)">[MIC: OFF]</span>
-    <span class="interactive-toggle" id="tts-toggle" title="Toggle Voice Feedback (or use /tts)">[TTS: OFF]</span>
+    <span id="operator-info">OPERATOR: YASHPREET GUPTA</span>
     <span id="clock">00:00:00</span>
   </div>
 
