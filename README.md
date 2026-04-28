@@ -30,7 +30,7 @@ Upload your documents (PDF, TXT, Markdown), and LOKI will parse, chunk, and embe
 LOKI is engineered to be **hosting-agnostic**. It detects its environment automatically:
 
 *   **Local Mode**: Uses **Ollama** (LLM) and **ChromaDB** (Vector Store). Perfect for privacy and offline use.
-*   **Hosted Mode (Render)**: Switches to **Groq** (LLM) and **Pinecone** (Vector Store). Optimized for Render's free tier by routing embeddings to the **Hugging Face Inference API** to stay under memory limits.
+*   **Hosted Mode (Render)**: Switches to **Groq** (LLM) and **Pinecone** (Vector Store). If `HF_TOKEN` is present it uses the **Hugging Face Inference API** for embeddings; otherwise it falls back to the local `sentence-transformers` model.
 
 ---
 
@@ -109,7 +109,7 @@ python run.py
 | `OLLAMA_MODEL`     | `gemma:2b`   | The model LOKI will use locally         |
 | `GROQ_API_KEY`     | *(optional)* | API key for Groq (Cloud Mode)           |
 | `PINECONE_API_KEY` | *(optional)* | API key for Pinecone (Cloud Mode)       |
-| `HF_TOKEN`         | *(optional)* | Hugging Face token for Cloud Embeddings |
+| `HF_TOKEN`         | *(optional)* | Enables Hugging Face-hosted embeddings in Cloud Mode |
 | `FLASK_PORT`       | `5001`       | Local server port                       |
 
 ---
@@ -138,7 +138,7 @@ LOKI includes a `render.yaml` for one-click deployment.
 
 1.  Create a **Pinecone** index (`dimension: 384`).
 2.  Connect this repo to **Render**.
-3.  Add `GROQ_API_KEY`, `PINECONE_API_KEY`, and `HF_TOKEN` to your Environment Secrets.
+3.  Add `GROQ_API_KEY` and `PINECONE_API_KEY` to your Environment Secrets. `HF_TOKEN` is optional if you want hosted embeddings instead of the local fallback.
 4.  Deploy! LOKI will automatically switch to cloud mode.
 
 ---

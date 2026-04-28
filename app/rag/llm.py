@@ -19,6 +19,17 @@ _cache: dict = {"backend": None, "model": "", "ts": 0.0}
 _CACHE_TTL = 30  # seconds
 
 
+def _format_groq_error(exc: Exception) -> str:
+    """Return a user-facing Groq error string with auth failures called out."""
+    message = str(exc)
+    lowered = message.lower()
+    if "401" in message or "unauthorized" in lowered or "authentication" in lowered:
+        return "[ERROR: Groq rejected the API key. Check GROQ_API_KEY in your environment.]"
+    if "429" in message or "rate limit" in lowered:
+        return "[ERROR: Groq rate limit exceeded. Try again in a moment.]"
+    return f"[ERROR: Groq LLM error — {exc}]"
+
+
 def _is_hosted() -> bool:
     try:
         from flask import current_app
@@ -163,7 +174,7 @@ def _groq_langchain_stream(prompt: str, model: str) -> Generator[str, None, None
 
     except Exception as exc:
         logger.error("langchain_groq stream error: %s", exc)
-        yield f"[ERROR: Groq LLM error — {exc}]"
+        yield _format_groq_error(exc)
 
 
 def generate(prompt: str) -> str:
@@ -226,4 +237,3 @@ def _groq_langchain_generate(prompt: str, model: str) -> str:
     except Exception as exc:
         logger.error("langchain_groq generate error: %s", exc)
         return ""
-

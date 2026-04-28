@@ -1,4 +1,4 @@
-"""Hybrid Embedding generation (Hugging Face API for Cloud, Local for Dev)."""
+"""Hybrid embedding generation with resilient cloud/local fallback."""
 
 import os
 import logging
@@ -14,7 +14,7 @@ API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all
 
 
 def _get_local_model():
-    """Load the local PyTorch model only if we aren't using the cloud API."""
+    """Load the local sentence-transformers model on demand."""
     global _model
     if _model is None:
         try:
@@ -28,48 +28,53 @@ def _get_local_model():
             )
     return _model
 
+
+def _local_embeddings(texts: list[str]) -> list[list[float]]:
+    """Generate embeddings with the bundled local model."""
+    logger.info("Processing embeddings locally with sentence-transformers...")
+    model = _get_local_model()
+    vectors = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
+    return [v.tolist() for v in vectors]
+
+
 def get_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings using a smart Hybrid approach:
-    1. If HF_TOKEN is in environment -> Route to Hugging Face API (Production Mode)
-    2. If no token AND not in production -> Load model into local memory (Local Dev Mode)
+    Generate embeddings using a resilient hybrid approach.
+
+    Preference order:
+    1. If HF_TOKEN is present, try Hugging Face's hosted inference API.
+    2. If the token is missing or the API call fails/auths badly, fall back to
+       the local sentence-transformers model.
     """
-    hf_token = os.environ.get("HF_TOKEN")
-    is_production = os.environ.get("PRODUCTION") == "1" or os.environ.get("RENDER") == "1"
+    hf_token = (os.environ.get("HF_TOKEN") or "").strip()
 
     if hf_token:
-        # ==========================================
-        # CLOUD MODE (Render / Production)
-        # ==========================================
-        logger.info("HF_TOKEN found. Routing embeddings to Hugging Face API...")
+        logger.info("HF_TOKEN found. Attempting Hugging Face Inference API embeddings...")
         headers = {"Authorization": f"Bearer {hf_token}"}
         payload = {"inputs": texts, "options": {"wait_for_model": True}}
 
         try:
-            response = requests.post(API_URL, headers=headers, json=payload)
+            response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
+            if response.status_code in (401, 403):
+                logger.warning(
+                    "Hugging Face embedding request was rejected (%s). Falling back to local embeddings.",
+                    response.status_code,
+                )
+                return _local_embeddings(texts)
             response.raise_for_status()
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            logger.error("Hugging Face API Failed: %s", e)
-            raise RuntimeError(f"Cloud embedding generation failed: {e}")
+            data = response.json()
+            if isinstance(data, dict) and data.get("error"):
+                logger.warning(
+                    "Hugging Face embedding API returned an error payload: %s. Falling back to local embeddings.",
+                    data.get("error"),
+                )
+                return _local_embeddings(texts)
+            return data
 
-    elif is_production:
-        # ==========================================
-        # PRODUCTION FAILSAFE
-        # ==========================================
-        # Never try to load local models on Render/Free tiers.
-        logger.error("No HF_TOKEN found in Production environment!")
-        raise RuntimeError(
-            "HF_TOKEN is missing. Local model loading is disabled in production to prevent crashes. "
-            "Please add HF_TOKEN to your environment variables."
-        )
+        except requests.exceptions.RequestException as exc:
+            logger.warning(
+                "Hugging Face embedding API request failed: %s. Falling back to local embeddings.",
+                exc,
+            )
 
-    else:
-        # ==========================================
-        # LOCAL MODE (Development)
-        # ==========================================
-        logger.info("No HF_TOKEN found. Processing embeddings locally...")
-        model = _get_local_model()
-        vectors = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
-        return [v.tolist() for v in vectors]
+    return _local_embeddings(texts)

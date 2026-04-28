@@ -23,9 +23,6 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
-      - key: HF_TOKEN
-        sync: false
-
       # ── Vector store (Pinecone) ──────────
       - key: PINECONE_API_KEY
         sync: false
@@ -35,6 +32,8 @@ services:
       # ── Embeddings ───────────
       - key: EMBEDDING_MODEL
         value: sentence-transformers/all-MiniLM-L6-v2
+      - key: HF_TOKEN
+        sync: false
 
       # ── Chunking ─────────────
       - key: CHUNK_SIZE
