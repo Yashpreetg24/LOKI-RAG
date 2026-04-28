@@ -39,6 +39,7 @@ if IS_HOSTED:
     groq_key     = os.environ.get("GROQ_API_KEY", "").strip()
     pinecone_key = os.environ.get("PINECONE_API_KEY", "").strip()
     pinecone_idx = os.environ.get("PINECONE_INDEX", "").strip()
+    hf_token     = os.environ.get("HF_TOKEN", "").strip()
 
     if not groq_key:
         missing.append("  GROQ_API_KEY      — get a free key at https://console.groq.com")
@@ -46,6 +47,8 @@ if IS_HOSTED:
         missing.append("  PINECONE_API_KEY  — get a key at https://app.pinecone.io")
     if not pinecone_idx:
         missing.append("  PINECONE_INDEX    — the name of your Pinecone index")
+    if not hf_token:
+        missing.append("  HF_TOKEN          — get a free read token at https://huggingface.co/settings/tokens")
 
     if missing:
         sys.exit(
@@ -55,7 +58,7 @@ if IS_HOSTED:
             + "\n\nFor local development, ensure RENDER or PRODUCTION is NOT set to 1."
         )
 
-    logger.info("All hosted API keys present — using Groq + Pinecone.")
+    logger.info("All hosted API keys present — using Groq + Pinecone + HF API.")
 
 else:
     logger.info("Local environment — using Ollama + ChromaDB.")

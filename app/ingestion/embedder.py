@@ -31,10 +31,11 @@ def _get_local_model():
 def get_embeddings(texts: list[str]) -> list[list[float]]:
     """
     Generate embeddings using a smart Hybrid approach:
-    1. If HF_TOKEN is in environment -> Route to Hugging Face API (Render Mode)
-    2. If no token -> Load model into local memory (MacBook Mode)
+    1. If HF_TOKEN is in environment -> Route to Hugging Face API (Production Mode)
+    2. If no token AND not in production -> Load model into local memory (Local Dev Mode)
     """
     hf_token = os.environ.get("HF_TOKEN")
+    is_production = os.environ.get("PRODUCTION") == "1" or os.environ.get("RENDER") == "1"
 
     if hf_token:
         # ==========================================
@@ -47,15 +48,22 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
         try:
             response = requests.post(API_URL, headers=headers, json=payload)
             response.raise_for_status()
-            
-            # The API returns a list of lists of floats, exactly what we need
             return response.json()
             
         except requests.exceptions.RequestException as e:
             logger.error("Hugging Face API Failed: %s", e)
-            if 'response' in locals() and response is not None:
-                logger.error("API Response: %s", response.text)
-            raise RuntimeError("Cloud embedding generation failed.")
+            raise RuntimeError(f"Cloud embedding generation failed: {e}")
+
+    elif is_production:
+        # ==========================================
+        # PRODUCTION FAILSAFE
+        # ==========================================
+        # Never try to load local models on Render/Free tiers.
+        logger.error("No HF_TOKEN found in Production environment!")
+        raise RuntimeError(
+            "HF_TOKEN is missing. Local model loading is disabled in production to prevent crashes. "
+            "Please add HF_TOKEN to your environment variables."
+        )
 
     else:
         # ==========================================

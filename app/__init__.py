@@ -24,13 +24,6 @@ def create_app():
     from app.routes import bp
     app.register_blueprint(bp)
 
-    # Initialise the active vector store inside app context
-    # (ChromaDB locally, Pinecone in hosted mode)
-    with app.app_context():
-        from app.ingestion.store import init_store
-        init_store()
-
-
     # Serve index.html at root
     @app.route("/")
     def index():

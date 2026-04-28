@@ -18,11 +18,14 @@ services:
       - key: RENDER
         value: "1"
 
-      # ── LLM (Groq) ───────────
+      # ── LLM & Embeddings ───────────
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
+      - key: HF_TOKEN
+        sync: false
+        description: "Hugging Face Read Token for Inference API"
 
       # ── Vector store (Pinecone) ──────────
       - key: PINECONE_API_KEY
