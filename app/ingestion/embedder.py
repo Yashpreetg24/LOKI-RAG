@@ -90,6 +90,39 @@ def _hf_api_embeddings(texts: list[str], token: str) -> list[list[float]] | None
         return None
 
 
+def _hf_api_embeddings_no_auth(texts: list[str]) -> list[list[float]] | None:
+    """Try HuggingFace Inference API without any auth token.
+
+    Public models like all-MiniLM-L6-v2 are accessible without a token,
+    but with lower rate limits. This is a last-resort fallback for production.
+
+    Returns:
+        list of vectors on success, or None on failure.
+    """
+    payload = {"inputs": texts, "options": {"wait_for_model": True}}
+
+    try:
+        response = requests.post(API_URL, json=payload, timeout=60)
+
+        if response.status_code == 429:
+            logger.warning("Tokenless HF API rate-limited.")
+            return None
+
+        response.raise_for_status()
+        data = response.json()
+
+        if isinstance(data, dict) and data.get("error"):
+            logger.warning("Tokenless HF API error: %s", data.get("error"))
+            return None
+
+        logger.info("Tokenless HF API succeeded for %d text(s).", len(texts))
+        return data
+
+    except requests.exceptions.RequestException as exc:
+        logger.warning("Tokenless HF API request failed: %s", exc)
+        return None
+
+
 def get_embeddings(texts: list[str]) -> list[list[float]]:
     """Generate embeddings using caching + multi-key failover.
 
@@ -133,18 +166,26 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
             else:
                 km.mark_failed(token, reason="API error or auth failure")
 
-        logger.warning("All HF tokens exhausted. Falling back to local embeddings.")
+        logger.warning("All HF tokens exhausted. Trying tokenless fallback...")
 
-    # ── 3. Local fallback ─────────────────────────────────────────────────────
+    # ── 3. Tokenless HF API fallback (public models work without auth) ────────
     is_production = os.environ.get("PRODUCTION") == "1" or os.environ.get("RENDER") == "1"
 
     if is_production:
-        logger.error("No working HF tokens in production! Local model loading is disabled.")
+        logger.info("Attempting tokenless HF Inference API (public model, lower rate limits)...")
+        result = _hf_api_embeddings_no_auth(texts)
+        if result is not None:
+            embedding_cache.put(cache_key, result)
+            logger.info("[CACHE STORE] Cached tokenless embeddings for %d text(s).", len(texts))
+            return result
+
+        logger.error("All embedding methods failed in production.")
         raise RuntimeError(
-            "All HF_TOKEN(s) failed and local model loading is disabled in production. "
-            "Please add working HF_TOKEN(s) to your environment variables."
+            "All HF_TOKEN(s) failed and tokenless API also failed. "
+            "Please check your HF_TOKEN(s) or try again shortly."
         )
 
+    # ── 4. Local fallback (dev only) ──────────────────────────────────────────
     result = _local_embeddings(texts)
     embedding_cache.put(cache_key, result)
     logger.info("[CACHE STORE] Cached local embeddings for %d text(s).", len(texts))
