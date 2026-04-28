@@ -9,11 +9,11 @@ Upload your documents (PDF, TXT, Markdown), and LOKI will parse, chunk, and embe
 ## 📸 Preview
 
 <div align="center">
-  <img src="docs/screenshots/onboarding.png" width="45%" alt="LOKI OS Onboarding" />
-  <img src="docs/screenshots/logo.png" width="45%" alt="LOKI Logo Glitch" />
+  <img src="docs/screenshots/onboarding.jpeg" width="45%" alt="LOKI OS Onboarding" />
+  <img src="docs/screenshots/logo.jpeg" width="45%" alt="LOKI Logo Glitch" />
   <br/>
-  <img src="docs/screenshots/terminal_empty.png" width="45%" alt="Terminal UI" />
-  <img src="docs/screenshots/terminal_active.png" width="45%" alt="RAG in Action" />
+  <img src="docs/screenshots/terminal_empty.jpeg" width="45%" alt="Terminal UI" />
+  <img src="docs/screenshots/terminal_active.jpeg" width="45%" alt="RAG in Action" />
 </div>
 
 ---
