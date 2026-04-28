@@ -5,8 +5,10 @@ Features:
   for previously seen text (DP overlapping-subproblems optimisation).
 - **HF Token Failover**: If one HuggingFace token fails, automatically
   rotates to the next available token before falling back to local model.
-- **Resilient Fallback**: Cloud API → next token → local model.
+- **Resilient Fallback**: Cloud API → next token → tokenless API → local model.
 """
+
+from __future__ import annotations
 
 import os
 import logging
@@ -169,23 +171,23 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
         logger.warning("All HF tokens exhausted. Trying tokenless fallback...")
 
     # ── 3. Tokenless HF API fallback (public models work without auth) ────────
+    logger.info("Attempting tokenless HF Inference API (public model, lower rate limits)...")
+    result = _hf_api_embeddings_no_auth(texts)
+    if result is not None:
+        embedding_cache.put(cache_key, result)
+        logger.info("[CACHE STORE] Cached tokenless embeddings for %d text(s).", len(texts))
+        return result
+
+    # ── 4. Local fallback (dev only — disabled in production) ─────────────────
     is_production = os.environ.get("PRODUCTION") == "1" or os.environ.get("RENDER") == "1"
 
     if is_production:
-        logger.info("Attempting tokenless HF Inference API (public model, lower rate limits)...")
-        result = _hf_api_embeddings_no_auth(texts)
-        if result is not None:
-            embedding_cache.put(cache_key, result)
-            logger.info("[CACHE STORE] Cached tokenless embeddings for %d text(s).", len(texts))
-            return result
-
         logger.error("All embedding methods failed in production.")
         raise RuntimeError(
-            "All HF_TOKEN(s) failed and tokenless API also failed. "
-            "Please check your HF_TOKEN(s) or try again shortly."
+            "All embedding methods failed (tokens + tokenless API). "
+            "Please try again shortly or check your HF_TOKEN(s)."
         )
 
-    # ── 4. Local fallback (dev only) ──────────────────────────────────────────
     result = _local_embeddings(texts)
     embedding_cache.put(cache_key, result)
     logger.info("[CACHE STORE] Cached local embeddings for %d text(s).", len(texts))
