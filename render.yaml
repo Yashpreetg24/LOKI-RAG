@@ -12,6 +12,7 @@ services:
     startCommand: gunicorn run:app -w 1 --timeout 120 --bind 0.0.0.0:$PORT
 
     healthCheckPath: /api/health
+    healthCheckTimeoutSeconds: 30  # Give more time for the embedding model to download on first start
 
     envVars:
       # ── Hosting flag ─────────
