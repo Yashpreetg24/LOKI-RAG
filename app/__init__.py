@@ -28,7 +28,9 @@ def create_app():
     # (ChromaDB locally, Pinecone in hosted mode)
     with app.app_context():
         from app.ingestion.store import init_store
+        from app.ingestion.embedder import pre_warm
         init_store()
+        pre_warm()
 
     # Serve index.html at root
     @app.route("/")
