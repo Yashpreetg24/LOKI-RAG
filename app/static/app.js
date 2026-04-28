@@ -1129,7 +1129,6 @@ function refocusInput() {
 // ── Onboarding Logic ──────────────────────────────────────────
 async function startOnboarding() {
   const overlay = document.getElementById('onboarding-overlay');
-  const skipBtn = document.getElementById('skip-onboarding');
 
   let onboardingDone = false;
 
@@ -1146,10 +1145,8 @@ async function startOnboarding() {
     setTimeout(() => overlay.remove(), 800);
   };
 
-  skipBtn.addEventListener('click', finish);
-
-  // Auto-finish after 7 seconds
-  setTimeout(finish, 7500); // 7.5s to account for last animation
+  // Auto-finish after 7.5 seconds
+  setTimeout(finish, 7500); 
 }
 
 // ── Mobile Keyboard Fix (visualViewport) ───────────────────────
