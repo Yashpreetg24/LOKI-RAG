@@ -1,10 +1,11 @@
-"""Unified LLM router.
+"""Unified LLM router with multi-key Groq failover.
 
 Local  (IS_HOSTED=False) : Ollama → Groq fallback (plain requests)
 Hosted (IS_HOSTED=True)  : Groq via langchain_groq.ChatGroq (no Ollama check)
 
-The resolve_backend result is cached for 30 seconds to avoid a health-check
-HTTP round-trip on every token-stream request in local mode.
+Features:
+- Backend detection cached for 30s to avoid repeated health-checks.
+- Multi-key Groq failover: if one key fails (401/429), rotates to the next.
 """
 
 import logging
@@ -17,6 +18,12 @@ logger = logging.getLogger(__name__)
 # ── Backend cache ─────────────────────────────────────────────────────────────
 _cache: dict = {"backend": None, "model": "", "ts": 0.0}
 _CACHE_TTL = 30  # seconds
+
+
+def _get_groq_key_manager():
+    """Lazy import to avoid circular imports at module load time."""
+    from app.config import groq_key_manager
+    return groq_key_manager
 
 
 def _format_groq_error(exc: Exception) -> str:
@@ -58,6 +65,11 @@ def _groq_model() -> str:
 
 
 def _groq_api_key() -> str:
+    """Get the best available Groq API key from the KeyManager."""
+    km = _get_groq_key_manager()
+    if km.has_keys:
+        return km.get_key()
+    # Fallback to single key from config
     try:
         from flask import current_app
         return current_app.config.get("GROQ_API_KEY", "")
@@ -90,8 +102,8 @@ def resolve_backend() -> tuple[str, str]:
             result = ("ollama", _ollama_model())
             logger.info("LLM backend: Ollama (%s)", result[1])
         else:
-            from app.rag.groq_client import has_api_key
-            if has_api_key():
+            km = _get_groq_key_manager()
+            if km.has_keys:
                 result = ("groq_langchain", _groq_model())
                 logger.info("LLM backend: Groq (via langchain-groq) — Ollama unavailable")
             else:
@@ -127,7 +139,7 @@ def generate_stream(prompt: str) -> Generator[str, None, None]:
         yield from _stream(prompt, model)
 
     elif backend == "groq_langchain":
-        yield from _groq_langchain_stream(prompt, model)
+        yield from _groq_langchain_stream_with_failover(prompt, model)
 
     else:
         yield (
@@ -136,45 +148,70 @@ def generate_stream(prompt: str) -> Generator[str, None, None]:
         )
 
 
-def _groq_langchain_stream(prompt: str, model: str) -> Generator[str, None, None]:
-    """Stream tokens using langchain_groq.ChatGroq.
+def _groq_langchain_stream_with_failover(prompt: str, model: str) -> Generator[str, None, None]:
+    """Stream tokens from Groq with automatic key failover.
 
-    Args:
-        prompt: The fully-formatted prompt string.
-        model:  Groq model ID (e.g. "llama-3.1-8b-instant").
-
-    Yields:
-        str: Individual content tokens.
+    Tries each available key until one succeeds or all are exhausted.
     """
-    try:
-        from langchain_groq import ChatGroq
-        from langchain_core.messages import HumanMessage
-    except ImportError:
-        yield (
-            "[ERROR: langchain_groq is not installed. "
-            "Run: pip install langchain-groq]"
-        )
-        return
+    km = _get_groq_key_manager()
 
-    api_key = _groq_api_key()
-    if not api_key:
+    if not km.has_keys:
         yield "[ERROR: GROQ_API_KEY is not set. Cannot use hosted LLM.]"
         return
 
-    try:
-        llm = ChatGroq(
-            api_key=api_key,
-            model_name=model,
-            streaming=True,
-            temperature=0.7,
-        )
-        for chunk in llm.stream([HumanMessage(content=prompt)]):
-            if chunk.content:
-                yield chunk.content
+    max_attempts = km.key_count
+    last_error = ""
 
-    except Exception as exc:
-        logger.error("langchain_groq stream error: %s", exc)
-        yield _format_groq_error(exc)
+    for attempt in range(max_attempts):
+        api_key = km.get_key()
+        if not api_key:
+            break
+
+        logger.info(
+            "Groq stream attempt %d/%d with key ...%s",
+            attempt + 1, max_attempts, api_key[-6:],
+        )
+
+        try:
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
+        except ImportError:
+            yield (
+                "[ERROR: langchain_groq is not installed. "
+                "Run: pip install langchain-groq]"
+            )
+            return
+
+        try:
+            llm = ChatGroq(
+                api_key=api_key,
+                model_name=model,
+                streaming=True,
+                temperature=0.7,
+            )
+
+            tokens = []
+            for chunk in llm.stream([HumanMessage(content=prompt)]):
+                if chunk.content:
+                    tokens.append(chunk.content)
+                    yield chunk.content
+
+            # If we got tokens, the key worked
+            if tokens:
+                km.mark_success(api_key)
+                return
+
+        except Exception as exc:
+            last_error = str(exc)
+            logger.warning(
+                "Groq key ...%s failed on attempt %d: %s",
+                api_key[-6:], attempt + 1, exc,
+            )
+            km.mark_failed(api_key, reason=last_error)
+            continue
+
+    # All keys exhausted
+    yield _format_groq_error(Exception(last_error or "All Groq API keys failed"))
 
 
 def generate(prompt: str) -> str:
@@ -195,7 +232,7 @@ def generate(prompt: str) -> str:
         return _gen(prompt, model)
 
     elif backend == "groq_langchain":
-        return _groq_langchain_generate(prompt, model)
+        return _groq_langchain_generate_with_failover(prompt, model)
 
     elif backend == "groq":
         from app.rag.groq_client import generate as _gen
@@ -205,35 +242,41 @@ def generate(prompt: str) -> str:
         return ""
 
 
-def _groq_langchain_generate(prompt: str, model: str) -> str:
-    """Non-streaming response using langchain_groq.ChatGroq.
+def _groq_langchain_generate_with_failover(prompt: str, model: str) -> str:
+    """Non-streaming response with key failover."""
+    km = _get_groq_key_manager()
 
-    Args:
-        prompt: The fully-formatted prompt string.
-        model:  Groq model ID.
-
-    Returns:
-        str: The complete response text, or empty string on error.
-    """
-    try:
-        from langchain_groq import ChatGroq
-        from langchain_core.messages import HumanMessage
-    except ImportError:
+    if not km.has_keys:
         return ""
 
-    api_key = _groq_api_key()
-    if not api_key:
-        return ""
+    for attempt in range(km.key_count):
+        api_key = km.get_key()
+        if not api_key:
+            break
 
-    try:
-        llm = ChatGroq(
-            api_key=api_key,
-            model_name=model,
-            streaming=False,
-            temperature=0.3,
-        )
-        result = llm.invoke([HumanMessage(content=prompt)])
-        return result.content.strip() if result.content else ""
-    except Exception as exc:
-        logger.error("langchain_groq generate error: %s", exc)
-        return ""
+        try:
+            from langchain_groq import ChatGroq
+            from langchain_core.messages import HumanMessage
+        except ImportError:
+            return ""
+
+        try:
+            llm = ChatGroq(
+                api_key=api_key,
+                model_name=model,
+                streaming=False,
+                temperature=0.3,
+            )
+            result = llm.invoke([HumanMessage(content=prompt)])
+            km.mark_success(api_key)
+            return result.content.strip() if result.content else ""
+
+        except Exception as exc:
+            logger.warning(
+                "Groq generate key ...%s failed: %s",
+                api_key[-6:], exc,
+            )
+            km.mark_failed(api_key, reason=str(exc))
+            continue
+
+    return ""

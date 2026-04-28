@@ -6,6 +6,7 @@ before vector retrieval.
 """
 
 import json
+from app.cache import query_cache, vector_hash
 import logging
 import re
 from typing import Generator
@@ -168,14 +169,23 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
         yield _sse({"done": True, "sources": []})
         return
 
-    # 2. Retrieve top-10 chunks for deeper context
-    try:
-        hits = vector_store.search(q_embedding, top_k=10)
-    except Exception as exc:
-        logger.error("ChromaDB search failed: %s", exc)
-        yield _sse({"token": f"[ERROR: Could not search documents — {exc}]"})
-        yield _sse({"done": True, "sources": []})
-        return
+    # 2. Retrieve chunks — check query cache first (DP memoization)
+    q_hash = vector_hash(q_embedding)
+    cached_hits = query_cache.get(q_hash)
+
+    if cached_hits is not None:
+        logger.info("[CACHE HIT] Query results returned from cache.")
+        hits = cached_hits
+    else:
+        try:
+            hits = vector_store.search(q_embedding, top_k=10)
+            query_cache.put(q_hash, hits)
+            logger.info("[CACHE STORE] Cached query results for future lookups.")
+        except Exception as exc:
+            logger.error("Vector store search failed: %s", exc)
+            yield _sse({"token": f"[ERROR: Could not search documents — {exc}]"})
+            yield _sse({"done": True, "sources": []})
+            return
 
     if not hits:
         prompt = prompts.build_no_docs_prompt(question, include_intro=include_intro)

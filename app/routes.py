@@ -7,6 +7,8 @@ from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request, Response, stream_with_context
 
+from app.cache import query_cache
+
 logger = logging.getLogger(__name__)
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -154,6 +156,9 @@ def upload():
                 500,
             )
 
+        # Invalidate query cache — document set has changed
+        query_cache.clear()
+
         return jsonify(
             {
                 "status":   "success",
@@ -259,6 +264,8 @@ def delete_document(doc_id):
 
     try:
         vector_store.delete_document(doc_id)
+        # Invalidate query cache — document set has changed
+        query_cache.clear()
         return jsonify({"status": "deleted"})
     except Exception as exc:
         logger.error("delete_document error for '%s': %s", doc_id, exc)

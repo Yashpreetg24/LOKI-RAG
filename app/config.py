@@ -3,6 +3,8 @@
 import os
 from dotenv import load_dotenv
 
+from app.key_manager import parse_keys, KeyManager
+
 load_dotenv()
 
 
@@ -17,13 +19,18 @@ class Config:
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma:2b")
 
-    # Groq (hosted LLM)
+    # Groq (hosted LLM) — supports comma-separated keys for failover
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_API_KEYS: list = parse_keys(os.getenv("GROQ_API_KEY", ""))
     GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
     # Pinecone (hosted vector store)
     PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
     PINECONE_INDEX: str = os.getenv("PINECONE_INDEX", "rag-terminal")
+
+    # HuggingFace (embeddings API) — supports comma-separated tokens for failover
+    HF_TOKEN: str = os.getenv("HF_TOKEN", "")
+    HF_TOKENS: list = parse_keys(os.getenv("HF_TOKEN", ""))
 
     # Embeddings
     EMBEDDING_MODEL: str = os.getenv(
@@ -51,3 +58,10 @@ class Config:
         for ext in os.getenv("ALLOWED_EXTENSIONS", "pdf,txt,md").split(",")
         if ext.strip()
     }
+
+
+# ── Global Key Managers (singletons) ─────────────────────────────────────────
+# These are created once at import time and shared across the app.
+
+groq_key_manager = KeyManager("Groq", Config.GROQ_API_KEYS)
+hf_key_manager = KeyManager("HuggingFace", Config.HF_TOKENS)
