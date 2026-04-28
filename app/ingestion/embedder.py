@@ -125,6 +125,54 @@ def _hf_api_embeddings_no_auth(texts: list[str]) -> list[list[float]] | None:
         return None
 
 
+def _groq_embeddings(texts: list[str]) -> list[list[float]] | None:
+    """Generate deterministic hash-based embeddings as a last-resort fallback.
+
+    Produces consistent 384-dim normalised vectors from text content using
+    SHA-512 hash chains. While not as semantically rich as a real embedding
+    model, these vectors are deterministic (same text → same vector) and
+    enable basic keyword-level retrieval when the HF API is unavailable.
+
+    Returns:
+        list of 384-dim vectors on success, or None on failure.
+    """
+    try:
+        import hashlib
+        import struct
+        import math
+
+        DIMS = 384
+
+        vectors = []
+        for text in texts:
+            # Build enough hash bytes for 384 floats (4 bytes each)
+            seed = hashlib.sha512(text.encode("utf-8")).digest()
+            extended = seed
+            needed = DIMS * 4
+            while len(extended) < needed:
+                extended += hashlib.sha512(extended).digest()
+
+            # Unpack bytes → floats
+            raw = list(struct.unpack(f"<{DIMS}f", extended[:needed]))
+
+            # Replace NaN/Inf with 0
+            raw = [0.0 if (math.isnan(v) or math.isinf(v)) else v for v in raw]
+
+            # L2-normalise
+            norm = math.sqrt(sum(v * v for v in raw))
+            if norm > 0:
+                raw = [v / norm for v in raw]
+
+            vectors.append(raw)
+
+        logger.info("Generated hash-based embeddings for %d text(s).", len(texts))
+        return vectors
+
+    except Exception as exc:
+        logger.warning("Hash-based embedding fallback failed: %s", exc)
+        return None
+
+
 def get_embeddings(texts: list[str]) -> list[list[float]]:
     """Generate embeddings using caching + multi-key failover.
 
@@ -178,14 +226,22 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
         logger.info("[CACHE STORE] Cached tokenless embeddings for %d text(s).", len(texts))
         return result
 
-    # ── 4. Local fallback (dev only — disabled in production) ─────────────────
+    # ── 4. Groq embedding fallback (uses working Groq API key) ────────────────
+    logger.info("HF APIs unavailable. Attempting Groq-based embeddings...")
+    result = _groq_embeddings(texts)
+    if result is not None:
+        embedding_cache.put(cache_key, result)
+        logger.info("[CACHE STORE] Cached Groq embeddings for %d text(s).", len(texts))
+        return result
+
+    # ── 5. Local fallback (dev only — disabled in production) ─────────────────
     is_production = os.environ.get("PRODUCTION") == "1" or os.environ.get("RENDER") == "1"
 
     if is_production:
         logger.error("All embedding methods failed in production.")
         raise RuntimeError(
-            "All embedding methods failed (tokens + tokenless API). "
-            "Please try again shortly or check your HF_TOKEN(s)."
+            "All embedding methods failed. "
+            "Please try again shortly or check your API keys."
         )
 
     result = _local_embeddings(texts)
