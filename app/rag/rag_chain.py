@@ -137,12 +137,27 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
     history = conversation.get_history(conversation_id)
     search_query = question  # default: use as-is
 
-    if _needs_rewrite(question, history):
+    # ── Introduction Logic ───────────────────────────────────────────────────
+    q_words = question.lower().strip().split()
+    greetings = {"hi", "hello", "hey", "greetings", "yo"}
+    is_greeting = q_words[0].strip(",.!?") in greetings if q_words else False
+    
+    already_introduced = "burdened with glorious purpose" in history
+    include_intro = is_greeting and not already_introduced
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # 0. Contextual rewrite and typo correction
+    search_query = question  # default: use as-is
+
+    # We always attempt a rewrite to fix typos or resolve context, 
+    # unless it's a very simple command.
+    if not question.startswith("/") and len(question.strip()) > 2:
         rewritten = _rewrite_query(question, history)
         if rewritten and rewritten != question:
             search_query = rewritten
-            # Let the user know the query was understood contextually
-            yield _sse({"context_note": f"Understood as: {search_query}"})
+            # Let the user know the query was understood contextually if it changed significantly
+            if search_query.lower() != question.lower():
+                 yield _sse({"context_note": f"Understood as: {search_query}"})
 
     # 1. Embed the search query (rewritten or original)
     try:
@@ -163,7 +178,7 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
         return
 
     if not hits:
-        prompt = prompts.build_no_docs_prompt(question)
+        prompt = prompts.build_no_docs_prompt(question, include_intro=include_intro)
         for token in llm.generate_stream(prompt):
             yield _sse({"token": token})
         yield _sse({"done": True, "sources": []})
@@ -184,7 +199,7 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
 
     # 4. Build prompt — always use the ORIGINAL question so the answer reads
     #    naturally, but use the REWRITTEN query for retrieval above.
-    prompt = prompts.build_qa_prompt(context, history, question)
+    prompt = prompts.build_qa_prompt(context, history, question, include_intro=include_intro)
 
     # 5. Stream from active LLM backend
     full_answer = []

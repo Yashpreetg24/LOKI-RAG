@@ -39,7 +39,7 @@ class Config:
 
     # Flask
     FLASK_HOST: str = os.getenv("LOKI_NODE_HOST", "0.0.0.0")
-    FLASK_PORT: int = int(os.getenv("LOKI_NODE_PORT", 5000))
+    FLASK_PORT: int = int(os.getenv("LOKI_NODE_PORT", 5001))
     FLASK_DEBUG: bool = os.getenv("LOKI_DEBUG_MODE", "true").lower() == "true"
 
     # Upload
