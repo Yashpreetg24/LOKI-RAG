@@ -168,9 +168,9 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
         yield _sse({"done": True, "sources": []})
         return
 
-    # 2. Retrieve top-5 chunks
+    # 2. Retrieve top-10 chunks for deeper context
     try:
-        hits = vector_store.search(q_embedding, top_k=5)
+        hits = vector_store.search(q_embedding, top_k=10)
     except Exception as exc:
         logger.error("ChromaDB search failed: %s", exc)
         yield _sse({"token": f"[ERROR: Could not search documents — {exc}]"})

@@ -94,9 +94,9 @@ def build_qa_prompt(
         "3. If the user asks a question that is NOT in the context, say: 'I don't have enough information in the uploaded documents to answer this accurately.' but feel free to provide general knowledge if relevant.\n\n"
         
         "TECHNICAL RULES:\n"
-        "1. Stay concise and technical when answering from documents.\n"
-        "2. Use bullet points for lists.\n"
-        "3. ALWAYS cite the filename (e.g., [notes.pdf]) when using information from it.\n"
+        "1. Prioritize accuracy and thoroughness. Synthesize information from ALL relevant chunks in the CONTEXT to provide a comprehensive answer.\n"
+        "2. Use bullet points or numbered lists for complex data or multi-step explanations.\n"
+        "3. ALWAYS cite the filename (e.g., [notes.pdf]) for every claim you make based on that document.\n"
         "4. If the question is a follow-up, use the CONVERSATION HISTORY for context.\n"
         "5. ONLY refer to documents listed in 'ACTIVE DOCUMENTS' below. If a document mentioned in history is NOT in the active list, it has been deleted; do NOT mention it as available.\n\n"
         
