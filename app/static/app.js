@@ -751,7 +751,7 @@ async function handleHistoryCmd() {
       const row = document.createElement('div');
       row.className = msg.role === 'user' ? 'history-user' : 'history-assistant';
 
-      const label = msg.role === 'user' ? '❯ You' : '◆ AURA';
+      const label = msg.role === 'user' ? '❯ You' : '◆ LOKI';
       const time = msg.timestamp ? ` [${msg.timestamp}]` : '';
 
       const header = document.createElement('span');
