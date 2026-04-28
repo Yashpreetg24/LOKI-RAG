@@ -26,9 +26,8 @@ logger = logging.getLogger(__name__)
 # ── Environment detection ────────────────────────────────────────────────────
 
 IS_HOSTED = bool(
-    os.environ.get("LOKI_HOSTED_MODE") == "1" or 
-    os.environ.get("RENDER") or 
-    os.environ.get("PRODUCTION")
+    os.environ.get("RENDER") == "1" or 
+    os.environ.get("PRODUCTION") == "1"
 )
 
 if IS_HOSTED:
@@ -37,31 +36,29 @@ if IS_HOSTED:
     # ── Validate required keys ───────────────────────────────────────────────
     missing: list[str] = []
 
-    groq_key     = os.environ.get("LOKI_VAULT_TOKEN", "").strip()
-    pinecone_key = os.environ.get("LOKI_VECTOR_KEY", "").strip()
-    pinecone_idx = os.environ.get("LOKI_VECTOR_INDEX", "").strip()
+    groq_key     = os.environ.get("GROQ_API_KEY", "").strip()
+    pinecone_key = os.environ.get("PINECONE_API_KEY", "").strip()
+    pinecone_idx = os.environ.get("PINECONE_INDEX", "").strip()
 
     if not groq_key:
-        missing.append("  LOKI_VAULT_TOKEN   — get a free key at https://console.groq.com")
+        missing.append("  GROQ_API_KEY      — get a free key at https://console.groq.com")
     if not pinecone_key:
-        missing.append("  LOKI_VECTOR_KEY    — get a key at https://app.pinecone.io")
+        missing.append("  PINECONE_API_KEY  — get a key at https://app.pinecone.io")
     if not pinecone_idx:
-        missing.append("  LOKI_VECTOR_INDEX  — the name of your Pinecone index")
+        missing.append("  PINECONE_INDEX    — the name of your Pinecone index")
 
     if missing:
         sys.exit(
             "\n[FATAL] Hosted environment detected but required API keys are missing.\n"
             "Set the following environment variables before starting the app:\n\n"
             + "\n".join(missing)
-            + "\n\nFor local development, ensure LOKI_HOSTED_MODE is set to 0."
+            + "\n\nFor local development, ensure RENDER or PRODUCTION is NOT set to 1."
         )
 
     logger.info("All hosted API keys present — using Groq + Pinecone.")
-    os.environ["LOKI_HOSTED_MODE"] = "1"          # propagate so Config picks it up
 
 else:
     logger.info("Local environment — using Ollama + ChromaDB.")
-    os.environ["LOKI_HOSTED_MODE"] = "0"
 
 
 # ── Create and run the app ───────────────────────────────────────────────────
@@ -72,8 +69,8 @@ app = create_app()
 
 if __name__ == "__main__":
     host = app.config.get("FLASK_HOST", "0.0.0.0")
-    port = int(app.config.get("FLASK_PORT", 5000))
-    debug = app.config.get("FLASK_DEBUG", False) and not IS_HOSTED
+    port = int(app.config.get("FLASK_PORT", 5001))
+    debug = app.config.get("FLASK_DEBUG", True) and not IS_HOSTED
 
     print("\n" + "="*50)
     print(f"🚀 LOKI-RAG is running!")

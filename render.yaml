@@ -14,42 +14,42 @@ services:
     healthCheckPath: /api/health
 
     envVars:
-      # ── Hosting flag — tells run.py to activate Groq + Pinecone mode ─────────
-      - key: LOKI_HOSTED_MODE
+      # ── Hosting flag ─────────
+      - key: RENDER
         value: "1"
 
-      # ── LLM (Groq) ────────────────────────────────────────────────────────────
-      - key: LOKI_VAULT_TOKEN
-        sync: false          # Set manually in Render (Groq API Key)
-      - key: LOKI_CLOUD_BRAIN
+      # ── LLM (Groq) ───────────
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
         value: llama-3.1-8b-instant
 
-      # ── Vector store (Pinecone) ───────────────────────────────────────────────
-      - key: LOKI_VECTOR_KEY
-        sync: false          # Set manually in Render (Pinecone API Key)
-      - key: LOKI_VECTOR_INDEX
+      # ── Vector store (Pinecone) ──────────
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX
         value: rag-terminal
 
-      # ── Embeddings ────────────────────────────────────────────────────────────
-      - key: LOKI_EMBED_CORE
+      # ── Embeddings ───────────
+      - key: EMBEDDING_MODEL
         value: sentence-transformers/all-MiniLM-L6-v2
 
-      # ── Chunking ──────────────────────────────────────────────────────────────
-      - key: LOKI_SLICE_SIZE
+      # ── Chunking ─────────────
+      - key: CHUNK_SIZE
         value: "500"
-      - key: LOKI_SLICE_OVERLAP
+      - key: CHUNK_OVERLAP
         value: "50"
 
-      # ── Flask / Server ────────────────────────────────────────────────────────
-      - key: LOKI_NODE_HOST
+      # ── Flask / Server ───────
+      - key: FLASK_HOST
         value: "0.0.0.0"
-      - key: LOKI_DEBUG_MODE
+      - key: FLASK_DEBUG
         value: "false"
 
-      # ── Upload ────────────────────────────────────────────────────────────────
-      - key: LOKI_DATA_STREAM
+      # ── Upload ───────────────
+      - key: UPLOAD_FOLDER
         value: /tmp/uploads
-      - key: LOKI_MAX_PAYLOAD
+      - key: MAX_CONTENT_LENGTH
         value: "16777216"
-      - key: LOKI_ALLOWED_TYPES
+      - key: ALLOWED_EXTENSIONS
         value: pdf,txt,md

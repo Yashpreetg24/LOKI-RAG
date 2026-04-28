@@ -96,8 +96,8 @@ python run.py
 
 | Variable | Default | Description |
 |---|---|---|
-| `LOKI_OLLAMA_MODEL` | `gemma:2b` | The model LOKI will use locally |
-| `LOKI_PORT` | `5001` | Local server port |
+| `OLLAMA_MODEL` | `gemma:2b` | The model LOKI will use locally |
+| `FLASK_PORT` | `5001` | Local server port |
 | `GROQ_API_KEY` | *(optional)* | Cloud fallback API key |
 | `CHROMA_PERSIST_DIR` | `./chroma_db` | Where the vector vault is stored |
 
