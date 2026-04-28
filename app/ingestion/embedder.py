@@ -64,12 +64,3 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
         model = _get_local_model()
         vectors = model.encode(texts, show_progress_bar=False, convert_to_numpy=True)
         return [v.tolist() for v in vectors]
-
-def pre_warm():
-    """Trigger the model loading process so it's ready before the first query."""
-    if not os.environ.get("HF_TOKEN"):
-        logger.info("Pre-warming local embedding model...")
-        _get_local_model()
-        logger.info("Local embedding model is warm and ready.")
-    else:
-        logger.info("HF_TOKEN found. Cloud embedding engine ready.")
