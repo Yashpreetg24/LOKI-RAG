@@ -51,7 +51,13 @@ def build_rewrite_prompt(history: str, question: str) -> str:
 
 
 
-def build_qa_prompt(context: str, history: str, question: str, include_intro: bool = False) -> str:
+def build_qa_prompt(
+    context: str, 
+    history: str, 
+    question: str, 
+    available_docs: list[str] = None,
+    include_intro: bool = False
+) -> str:
     """Build a robust QA prompt with character budgeting.
 
     Uses a hybrid approach: the LLM first answers from document context,
@@ -61,10 +67,13 @@ def build_qa_prompt(context: str, history: str, question: str, include_intro: bo
         context: Retrieved document chunks, formatted as "doc_name: chunk_text".
         history: Conversation history formatted as "User: ...\nAssistant: ...".
         question: The user's current question.
+        available_docs: List of filenames currently in the system.
         include_intro: If True, instructs Loki to use his catchphrase.
     """
     safe_context = _truncate(context, MAX_CONTEXT_CHARS)
     safe_history = _truncate(history, MAX_HISTORY_CHARS)
+    
+    docs_list = ", ".join(available_docs) if available_docs else "None"
 
     intro_instr = ""
     if include_intro:
@@ -88,8 +97,10 @@ def build_qa_prompt(context: str, history: str, question: str, include_intro: bo
         "1. Stay concise and technical when answering from documents.\n"
         "2. Use bullet points for lists.\n"
         "3. ALWAYS cite the filename (e.g., [notes.pdf]) when using information from it.\n"
-        "4. If the question is a follow-up, use the CONVERSATION HISTORY for context.\n\n"
+        "4. If the question is a follow-up, use the CONVERSATION HISTORY for context.\n"
+        "5. ONLY refer to documents listed in 'ACTIVE DOCUMENTS' below. If a document mentioned in history is NOT in the active list, it has been deleted; do NOT mention it as available.\n\n"
         
+        f"ACTIVE DOCUMENTS: {docs_list}\n\n"
         f"CONTEXT:\n{safe_context}\n\n"
         f"CONVERSATION HISTORY:\n{safe_history}\n\n"
         f"USER: {question}\n\n"

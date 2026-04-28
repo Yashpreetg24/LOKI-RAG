@@ -47,13 +47,13 @@ LOKI is engineered to be **hosting-agnostic**. It detects its environment automa
 
 ## 🛠️ The Tech Stack
 
-| Layer | Local | Hosted |
-|---|---|---|
-| **Brain (LLM)** | Ollama (Gemma 2 / any model) | Groq (Llama 3.1) |
-| **Vector Store** | ChromaDB (Embedded) | Pinecone (Serverless) |
-| **Embeddings** | `all-MiniLM-L6-v2` | `all-MiniLM-L6-v2` |
-| **Backend** | Flask 3 + SSE Streaming | Flask 3 + SSE Streaming |
-| **Frontend** | Vanilla JS / CRT CSS | Vanilla JS / CRT CSS |
+| Layer            | Local                        | Hosted                  |
+| ---------------- | ---------------------------- | ----------------------- |
+| **Brain (LLM)**  | Ollama (Gemma 2 / any model) | Groq (Llama 3.1)        |
+| **Vector Store** | ChromaDB (Embedded)          | Pinecone (Serverless)   |
+| **Embeddings**   | `all-MiniLM-L6-v2`           | `all-MiniLM-L6-v2`      |
+| **Backend**      | Flask 3 + SSE Streaming      | Flask 3 + SSE Streaming |
+| **Frontend**     | Vanilla JS / CRT CSS         | Vanilla JS / CRT CSS    |
 
 ---
 
@@ -88,29 +88,29 @@ python run.py
 
 ## ⌨️ Terminal Commands
 
-| Command | Action |
-|---|---|
-| `<any text>` | Ask a question about your documents |
-| `/upload` | Open file picker to ingest a new PDF, TXT, or MD |
-| `/docs` | List all documents currently in the vector vault |
-| `/summarize <file>` | Generate an AI summary of a specific document |
-| `/delete <file>` | Wipe a file and its vectors from the system |
-| `/status` | Check LLM backend and system vitals |
-| `/clear` | Clear the terminal display |
-| `/help` | List all available protocols |
+| Command             | Action                                           |
+| ------------------- | ------------------------------------------------ |
+| `<any text>`        | Ask a question about your documents              |
+| `/upload`           | Open file picker to ingest a new PDF, TXT, or MD |
+| `/docs`             | List all documents currently in the vector vault |
+| `/summarize <file>` | Generate an AI summary of a specific document    |
+| `/delete <file>`    | Wipe a file and its vectors from the system      |
+| `/status`           | Check LLM backend and system vitals              |
+| `/clear`            | Clear the terminal display                       |
+| `/help`             | List all available protocols                     |
 
 ---
 
 ## ⚙️ Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `RENDER` | `0` | Set to `1` to force Cloud Mode |
-| `OLLAMA_MODEL` | `gemma:2b` | The model LOKI will use locally |
-| `GROQ_API_KEY` | *(optional)* | API key for Groq (Cloud Mode) |
-| `PINECONE_API_KEY`| *(optional)* | API key for Pinecone (Cloud Mode) |
-| `HF_TOKEN` | *(optional)* | Hugging Face token for Cloud Embeddings |
-| `FLASK_PORT` | `5001` | Local server port |
+| Variable           | Default      | Description                             |
+| ------------------ | ------------ | --------------------------------------- |
+| `RENDER`           | `0`          | Set to `1` to force Cloud Mode          |
+| `OLLAMA_MODEL`     | `gemma:2b`   | The model LOKI will use locally         |
+| `GROQ_API_KEY`     | *(optional)* | API key for Groq (Cloud Mode)           |
+| `PINECONE_API_KEY` | *(optional)* | API key for Pinecone (Cloud Mode)       |
+| `HF_TOKEN`         | *(optional)* | Hugging Face token for Cloud Embeddings |
+| `FLASK_PORT`       | `5001`       | Local server port                       |
 
 ---
 

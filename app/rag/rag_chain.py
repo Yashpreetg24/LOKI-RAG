@@ -199,7 +199,19 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
 
     # 4. Build prompt — always use the ORIGINAL question so the answer reads
     #    naturally, but use the REWRITTEN query for retrieval above.
-    prompt = prompts.build_qa_prompt(context, history, question, include_intro=include_intro)
+    try:
+        all_docs = vector_store.list_documents()
+        available_filenames = [d["filename"] for d in all_docs]
+    except Exception:
+        available_filenames = []
+
+    prompt = prompts.build_qa_prompt(
+        context, 
+        history, 
+        question, 
+        available_docs=available_filenames,
+        include_intro=include_intro
+    )
 
     # 5. Stream from active LLM backend
     full_answer = []
