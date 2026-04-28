@@ -4,6 +4,13 @@ A high-tech, terminal-themed **Retrieval-Augmented Generation (RAG)** system. Bu
 
 Upload your documents (PDF, TXT, Markdown), and LOKI will parse, chunk, and embed them into a local vector vault, allowing you to query your data in natural language with cited, real-time responses.
 
+```text
+╔══════════════════════════════════════════════════╗
+║          LOKI  DOCUMENT Q&A TERMINAL             ║
+║     Powered by Gemma 2 · ChromaDB · RAG          ║
+╚══════════════════════════════════════════════════╝
+```
+
 ---
 
 ## 📸 Preview
@@ -18,13 +25,34 @@ Upload your documents (PDF, TXT, Markdown), and LOKI will parse, chunk, and embe
 
 ---
 
-## 🚀 Quick Start (Local)
+## ✨ Features
 
-LOKI is designed to run locally with **zero API costs**.
+- **Terminal UI** — dark CRT aesthetic, scanlines, typewriter streaming, blinking cursor.
+- **RAG Pipeline** — Automatic parsing, chunking, and vector embedding.
+- **Natural Language Processing** — Built-in typo correction and conversational memory.
+- **Privacy First** — Runs locally via Ollama with zero external API costs.
+- **Hybrid Deployment** — Seamlessly switch between Local (ChromaDB) and Cloud (Pinecone).
+- **No Frameworks** — Vanilla HTML/CSS/JS frontend; no npm, no build steps.
+
+---
+
+## 🛠️ The Tech Stack
+
+| Layer | Local | Hosted |
+|---|---|---|
+| **Brain (LLM)** | Ollama (Gemma 2 / any model) | Groq (Llama 3.1) |
+| **Vector Store** | ChromaDB (Embedded) | Pinecone (Serverless) |
+| **Embeddings** | `all-MiniLM-L6-v2` | `all-MiniLM-L6-v2` |
+| **Backend** | Flask 3 + SSE Streaming | Flask 3 + SSE Streaming |
+| **Frontend** | Vanilla JS / CRT CSS | Vanilla JS / CRT CSS |
+
+---
+
+## 🚀 Quick Start (Local)
 
 ### 1. Requirements
 *   **Ollama**: [Download here](https://ollama.com/)
-*   **Model**: `ollama pull gemma:2b` (or your preferred model)
+*   **Model**: `ollama pull gemma:2b`
 
 ### 2. Setup
 ```bash
@@ -45,19 +73,7 @@ pip install -r requirements.txt
 cp .env.example .env
 python run.py
 ```
-👉 Access the terminal at **http://localhost:5001**
-
----
-
-## 🛠️ The Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Brain (LLM)** | Ollama (Local) / Groq (Cloud Fallback) |
-| **Memory (Vector Store)** | ChromaDB (Local) / Pinecone (Cloud) |
-| **Embeddings** | `all-MiniLM-L6-v2` |
-| **Backend** | Flask 3 (Python) |
-| **Frontend** | Vanilla JS / CSS (CRT Phosphor Theme) |
+👉 Access at **http://localhost:5001**
 
 ---
 
@@ -65,33 +81,59 @@ python run.py
 
 | Command | Action |
 |---|---|
-| `/upload` | Choose files to ingest |
-| `/docs` | List your vector vault contents |
-| `/summarize <file>` | Get a quick brief of any doc |
-| `/delete <file>` | Wipe a file from the vault |
-| `/status` | Check system vitals |
-| `/help` | See all available protocols |
+| `<any text>` | Ask a question about your documents |
+| `/upload` | Open file picker to ingest a new PDF, TXT, or MD |
+| `/docs` | List all documents currently in the vector vault |
+| `/summarize <file>` | Generate an AI summary of a specific document |
+| `/delete <file>` | Wipe a file and its vectors from the system |
+| `/status` | Check LLM backend and system vitals |
+| `/clear` | Clear the terminal display |
+| `/help` | List all available protocols |
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOKI_OLLAMA_MODEL` | `gemma:2b` | The model LOKI will use locally |
+| `LOKI_PORT` | `5001` | Local server port |
+| `GROQ_API_KEY` | *(optional)* | Cloud fallback API key |
+| `CHROMA_PERSIST_DIR` | `./chroma_db` | Where the vector vault is stored |
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 LOKI-RAG/
 ├── app/
-│   ├── ingestion/     # Parsing & Embedding logic
-│   ├── rag/           # LLM chains & Prompt engineering
+│   ├── ingestion/     # Parsing, Chunking & Embedding logic
+│   ├── rag/           # LLM chains, Query rewriting & Prompts
+│   ├── models/        # Data structures & History
 │   ├── static/        # CRT Terminal UI (HTML/CSS/JS)
 │   └── routes.py      # Flask API Endpoints
+├── docs/screenshots/  # Visual assets for README
 ├── run.py             # System entry point
 ├── requirements.txt   # Core dependencies
-└── .env               # Environment configuration
+└── .env               # System configuration
 ```
 
 ---
 
+## ☁️ Cloud Deployment (Render)
+
+LOKI includes a `render.yaml` for one-click deployment.
+
+1.  Create a **Pinecone** index (`dimension: 384`).
+2.  Connect this repo to **Render**.
+3.  Add `GROQ_API_KEY` and `PINECONE_API_KEY` to your Environment Secrets.
+4.  Deploy! LOKI will automatically switch to cloud mode.
+
+---
+
 ## 👤 Author
-**Yashpreet Gupta**
+**Yashpreet Gupta**  
 *"Burdened with glorious purpose."*
 
 ---
