@@ -9,7 +9,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_TIMEOUT  = 60  # seconds
+GROQ_TIMEOUT  = 25  # seconds — must stay under Render's 30 s request limit
 
 
 def _api_key() -> str:

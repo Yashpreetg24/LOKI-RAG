@@ -250,11 +250,16 @@ async function streamSSE(url, body, onToken, onDone, onContextNote) {
   // Hide the input-bar cursor while streaming — the response area has its own
   cursorEl.style.visibility = 'hidden';
 
+  // Abort if no response within 30 s (Render free-tier limit)
+  const controller = new AbortController();
+  const abortTimer = setTimeout(() => controller.abort(), 30_000);
+
   try {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
 
     if (!resp.ok) {
@@ -263,6 +268,7 @@ async function streamSSE(url, body, onToken, onDone, onContextNote) {
       return;
     }
 
+    clearTimeout(abortTimer);   // stream connected — cancel the 30 s deadline
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
@@ -303,8 +309,13 @@ async function streamSSE(url, body, onToken, onDone, onContextNote) {
       }
     }
   } catch (err) {
-    printError('Connection error — ' + (err.message || 'could not reach server'));
+    if (err.name === 'AbortError') {
+      printError('Request timed out — the server took too long to respond. Try again.');
+    } else {
+      printError('Connection error — ' + (err.message || 'could not reach server'));
+    }
   } finally {
+    clearTimeout(abortTimer);
     state.streaming = false;
     cmdInput.disabled = false;
     // Restore input-bar cursor, then focus so blur→visibility logic runs correctly
