@@ -65,7 +65,7 @@ def _hf_api_embeddings(texts: list[str], token: str) -> list[list[float]] | None
     payload = {"inputs": texts, "options": {"wait_for_model": True}}
 
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=15)
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=5)
 
         if response.status_code in (401, 403):
             logger.warning(
@@ -104,7 +104,7 @@ def _hf_api_embeddings_no_auth(texts: list[str]) -> list[list[float]] | None:
     payload = {"inputs": texts, "options": {"wait_for_model": True}}
 
     try:
-        response = requests.post(API_URL, json=payload, timeout=15)
+        response = requests.post(API_URL, json=payload, timeout=5)
 
         if response.status_code == 429:
             logger.warning("Tokenless HF API rate-limited.")
