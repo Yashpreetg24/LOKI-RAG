@@ -188,6 +188,7 @@ def _groq_langchain_stream_with_failover(prompt: str, model: str) -> Generator[s
                 model_name=model,
                 streaming=True,
                 temperature=0.7,
+                request_timeout=20,  # seconds — leave headroom under Render's 30 s limit
             )
 
             tokens = []
@@ -266,6 +267,7 @@ def _groq_langchain_generate_with_failover(prompt: str, model: str) -> str:
                 model_name=model,
                 streaming=False,
                 temperature=0.3,
+                request_timeout=10,  # seconds — quick tasks like query rewriting
             )
             result = llm.invoke([HumanMessage(content=prompt)])
             km.mark_success(api_key)

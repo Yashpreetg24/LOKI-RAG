@@ -150,9 +150,10 @@ def query(question: str, conversation_id: str) -> Generator[str, None, None]:
     # 0. Contextual rewrite and typo correction
     search_query = question  # default: use as-is
 
-    # We always attempt a rewrite to fix typos or resolve context, 
-    # unless it's a very simple command.
-    if not question.startswith("/") and len(question.strip()) > 2:
+    # We attempt a rewrite only when the heuristic says it's needed
+    # (follow-up questions, pronoun references, etc.)
+    # This avoids burning an LLM round-trip on simple/greeting queries.
+    if not question.startswith("/") and len(question.strip()) > 2 and _needs_rewrite(question, history):
         rewritten = _rewrite_query(question, history)
         if rewritten and rewritten != question:
             search_query = rewritten
